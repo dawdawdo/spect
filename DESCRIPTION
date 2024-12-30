@@ -1,0 +1,17 @@
+Package: spect
+Version: 0.6
+Date: 2024-02-15
+Title: Survival Prediction Ensemble Classification Tool
+Authors@R: c(person("Stephen", "Abrams", role = c("aut", "cre"), email = "stephen.abrams@gmail.com"))
+Author: Stephen Abrams [aut, cre]
+Maintainer: Stephen Abrams <stephen.abrams@gmail.com>
+Depends: R (>= 4.0), nlme, ggplot2, caret, caretEnsemble, survival, survminer, parallel, doParallel, futile.logger, dplyr
+Suggests: MASS
+Description: A tool for ensemble classification modeling of survival data which provides a dead-simple interface
+	requiring minimal parameter specification and tooling for visualization. Users may also provide advanced parameters, if desired.
+	Spect has been tested against synthetic and standard survival benchmark data and provides all intermediate data sets and 
+	parameters to the user for further analysis.
+License: GPL-3
+URL: https://www.r-project.org, http://www.another.url
+BugReports: https://pkgname.bugtracker.url
+RoxygenNote: 7.2.2
