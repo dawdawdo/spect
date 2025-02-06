@@ -7,24 +7,20 @@
 evaluate_model(train_result, prediction_times, plot_roc = TRUE)
 }
 \arguments{
-\item{train_result}{- return data object from spect_train}
+\item{train_result}{return data object from spect_train}
 
-\item{prediction_times}{- a vecotr of times to use}
+\item{prediction_times}{a vecotr of times to use for generating TPR and FPR data}
 
-\item{plot_roc}{(=TRUE) - indicates whether to display the time-dependent ROC curves.
+\item{plot_roc}{optional indicator to display the time-dependent ROC curves.
 The TPR and FPR data will be returned regardless of the value of this parameter.}
 }
 \value{
-None - plots the number of requested samples
+Evaluation metrics. Also plots the number of requested samples
 }
 \description{
 Generates evaluation metrics, include time-dependent TPR and FPR rates as well as AUC
 }
-\examples{
-evaluate_model(param)
-
-}
 \author{
 Stephen Abrams, \email{stephen.abrams@louisville.edu}
 }
-\keyword{utilities}
+\keyword{visualization}
