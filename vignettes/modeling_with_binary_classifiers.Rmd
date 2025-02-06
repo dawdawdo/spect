@@ -1,0 +1,115 @@
+---
+title: "modeling_with_binary_classifiers"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{modeling_with_binary_classifiers}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(spect)
+```
+
+# Modeling time-to-event data
+
+The purpose of the spect package is to provide a simple, flexible interface for modeling time-to-event data using a discrete-time approach that makes use of existing binary classification tools. Below is an instructive example using the Mayo clinic pbc data set from the "survival" package.
+
+Note that the spect_train function requires the name of the column in the modeling data containing the event indicator variable (and the values in that column must be either zero or one) and the name of the column containing the time to the event for each individual. There are no positional constraints for these columns. All other columns will be treated as inputs to the model.
+
+Below, we take a subset of the pbc input columns and calculate the event indicator and survival time in years.
+
+```{r}
+set.seed(42)
+
+data(pbc, package = "survival")
+
+event_column <- "event_indicator"
+time_column <- "survival_time"
+
+pbc_complete <- pbc[complete.cases(pbc),]
+source_data <- pbc_complete[,c(7:20)]
+source_data[[event_column]] <- ifelse(pbc_complete$status == 2, 1, 0)
+source_data[[time_column]] <- pbc_complete$time / 365.25
+
+head(source_data)
+```
+
+Next, save a subset of the data to demonstrate predictions later.
+
+```{r}
+
+predict_data <- source_data[1:10,]
+train_data <- source_data[11:nrow(source_data),]
+
+```
+
+Then, call the spect_train() function. Note that the cores parameter is set to 2 specifically to avoid excessive stress on testing systems, however, it's generally best left at zero to allow spect to dynamically choose the number of cores to allocate to the job.
+
+```{r}
+result <- spect_train(model_algorithm = "rf"
+                      , base_learner_list = c("gbm", "svmLinear")
+                      , cores = 2
+                      , modeling_data = train_data
+                      , event_indicator_var = event_column
+                      , survival_time_var = time_column
+                      , obs_window = 12)
+```
+
+The result object can be passed to other functions in spect to help visualize and evaluate the model. First, take a look at the survival curve for a given individual - let's say number fifteen. The absolute survival probability is plotted in blue, and the conditional probability of surviving the given time slice, given that the individual survived to the beginning of that time slice is shown in orange.
+
+```{r}
+
+plot_survival_curve(result, individual_id=15)
+
+```
+
+To see only the conditional probability, set the curve_type to "conditional." For only the absolute probability plot, set curve_type to "absolute."
+
+```{r}
+
+plot_survival_curve(result, individual_id=15, curve_type="conditional")
+
+```
+
+```{r}
+
+plot_survival_curve(result, individual_id=15, curve_type="absolute")
+
+```
+
+Next, build a population-based survival curve (the so-called Kaplan-Meier curve). Note that in order to create a curve, we need to turn the individual survival curves above into actual predicted survival times. To do that, we must choose a probability threshold, then project that onto the time axis at the point of intersection with the curve. The search granularity allows us to do this for a number of choices of the probability threshold and visualize the resulting population curves.
+
+```{r}
+
+km_data <- plot_km(result, prediction_threshold_search_granularity = 0.1)
+```
+
+It is also often useful to see the ROC curve, however, because the modeling data contains one row per individual *per time bin*, we must choose a *particular* time at which to generate an ROC curve. Note that multiple times may be chose - a curve is generated for times 2 and 6 below.
+
+```{r}
+
+prediction_times = c(2, 6)
+eval <- evaluate_model(result, prediction_times)
+
+
+```
+
+Finally - it's relatively easy to calculate quantities of interest such as the unconditional probability of an individual surviving to a particular time. Cumulative probability is already captured by the spect_predict() function in the abs_event_prob column. Note that the conditional probability of surviving an interval, given that the individual survived to the beginning of that interval is also available.
+
+```{r}
+
+predictions  <- spect_predict(result, new_data=predict_data) 
+
+# Collect the absolute probability of surviving to time 6.
+survival_time_check = 6
+tail(predictions[predictions$individual_id == 1 & predictions$upper_bound 
+                    < survival_time_check,], n = 1)$abs_event_prob
+```

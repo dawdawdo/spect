@@ -1,0 +1,65 @@
+---
+title: "training_synthetic_data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{training_synthetic_data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(spect)
+```
+
+# Generating unit test data
+
+It can be useful to create a data set with a known distribution for testing novel modeling approaches. In this case, the sample data set generated is used for unit testing the spect package.
+
+```{r}
+
+rng_seed <- 42
+set.seed(rng_seed)
+
+syn_data <- create_synthetic_data(sample_size=2500,
+                      censor_percentage = 0.1,
+                      perturbation_shift = 6)
+                      
+
+source_data <- select(syn_data, -c(baseline_time_to_cancel, perturbed_baseline))
+
+predict_data <- source_data[1:10,]
+modeling_data <- source_data[11:nrow(source_data),]
+```
+
+Training the model then becomes a straightforward call to spect_train.
+
+```{r}
+
+event_indicator_var <- "cancel_event_detected"
+survival_time_var <- "total_months"
+obs_window <- 48
+alg="glm"
+
+result <- spect_train(model_algorithm=alg, modeling_data=modeling_data,
+                      event_indicator_var=event_indicator_var,
+                      survival_time_var=survival_time_var,
+                      obs_window=obs_window, use_parallel=FALSE)
+```
+
+All of the results are collected and serialized for use in unit tests. This data is available in the testthat/testdata/helper_train_data.rds file.
+
+```{r}
+
+spect_test_data <- mget(c("event_indicator_var", "survival_time_var",
+                          "obs_window", "alg", "syn_data", "source_data",
+                          "predict_data", "modeling_data", "result", "rng_seed"))
+                          
+saveRDS(object=spect_test_data, file="helper_train_data.rds")
+```

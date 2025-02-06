@@ -1,0 +1,78 @@
+---
+title: "create_synthetic_data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{create_synthetic_data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(spect)
+```
+
+It can be useful to have a data set with a known distribution for testing modeling approaches. It's also useful to be able to clearly conceptualize that data set. spect can generate synthetic time-to-event data for this purpose without relying on a potentially unknown external data set.
+
+# Creating synthetic data
+
+The create_synthetic_data() function will produce a single, relational data set where each row represents a fictional subscriber to a theoretical streaming service. spect can be used to model the time to the cancellation of the service. If no parameters are passed, then all defaults are invoked. The resulting data set contains two modeling variables:
+
+-   **incomes** - the average household income of the subscriber
+
+-   **watchtimes** - the average number of weekly hours the subscriber used the service in the prior month
+
+It also contains the following columns:
+
+-   **total_months** - the first of the time to cancellation or the end of the study (i.e. - censored data - the event did not occur)
+
+-   **cancel_event_detected** - an indicator variable. 0 means that the event did not occur (i.e. - censored data). 1 means that the event (cancellation) was observed.
+
+-   **baseline_time_to_cancel** - This is given by a simple, but non-linear formula: **B = 26 + W\^2 - (I / 10000)** where **W** is the **watchtimes** and **I** is the **incomes**. This can be thought of as the "ground truth" for the cancellation event time.
+
+-   **perturbed_baseline** - This differs from the baseline_time_to_cancel by the pertubartion_shift, if passed.
+
+```{r}
+
+set.seed(42)
+
+data <- create_synthetic_data()
+head(data)
+
+```
+
+# Modifying the distribution
+
+Since a distribution that matches exactly to a formula may not be adequate for testing a model, some optional parameters are provided to perturb the cancellation event distribution in a structured way. In particular, the user can specify the minimum, median, and variance of the income distribution and the minimum and maximum watchtimes.
+
+Additionally, it's possible to set a censorship percentage within a given minimum and maximum amount, adjust the length of the study (i.e. - the maximum total months). Finally, the perturbation_shift argument adds some random noise to the total_months column of the data, which helps to prevent instant overfitting.
+
+```{r}
+
+data <- create_synthetic_data(sample_size = 500
+                      , minimum_income = 10000
+                      , median_income = 40000
+                      , income_variance = 10000
+                      , min_watchhours = 2
+                      , max_watchhours = 10
+                      , censor_percentage = .2
+                      , min_censor_amount = 3
+                      , max_censor_amount = 3
+                      , study_time_in_months = 60
+                      , perturbation_shift = 5
+                      )
+
+head(data)
+```
+
+It may also be useful to visualize the data distributions. plotSynData() handles this straightforwardly. Here, it's easy to see the impact of the perturbation and censorship by comparing the "cancel_months" graph to the "final_cancel_months" graph. Also, note that incomes are roughly normally distribution, while watchtimes are roughly uniformly distributed.
+
+```{r}
+plot_synthetic_data(data)
+```

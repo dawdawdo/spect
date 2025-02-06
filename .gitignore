@@ -1,2 +1,5 @@
 .RData
 .Rhistory
+inst/doc
+/doc/
+/Meta/
