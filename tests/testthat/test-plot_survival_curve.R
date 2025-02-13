@@ -1,4 +1,4 @@
-flog.appender(appender.file("unit_tests.log"))
+flog.threshold("ERROR")
 
 test_that("plot_survivial_curve does not throw an error or warning", {
 

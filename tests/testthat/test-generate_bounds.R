@@ -1,4 +1,4 @@
-flog.appender(appender.file("unit_tests.log"))
+flog.threshold("ERROR") 
 
 test_that("generate_bounds doesn't create more intervals than events", {
 

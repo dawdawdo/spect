@@ -1,4 +1,4 @@
-flog.appender(appender.file("unit_tests.log"))
+flog.threshold("ERROR") 
 
 test_that("plot_km does not return an error", {
   

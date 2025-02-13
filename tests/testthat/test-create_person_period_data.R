@@ -1,4 +1,4 @@
-flog.appender(appender.file("unit_tests.log"))
+flog.threshold("ERROR")
 
 test_that("create_person_period_data generates the correct number of rows", {
   

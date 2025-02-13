@@ -1,4 +1,4 @@
-flog.appender(appender.file("unit_tests.log"))
+flog.threshold("ERROR")
 
 test_that("spect_train return data dimensions are correct.", {
  

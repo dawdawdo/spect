@@ -1,4 +1,4 @@
-flog.appender(appender.file("unit_tests.log"))
+flog.threshold("ERROR")
 
 test_that("create_training_data captures data at the end of the last interval", {
   

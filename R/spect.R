@@ -9,22 +9,22 @@
 # - Transparency - provides all intermediate data sets and parameters to the user
 # for further analysis
 
-# Not explicitly loaded with "library()", but required for the spect_train fucntion to run.
-#' @import caret
-#' @import caretEnsemble
-
 ##############################################################################
 # fucntions generate_bounds, create_person_period_data, create_training_data, 
 # and spect_predict adapted from https://github.com/ksuresh17/autoSurv
 ##############################################################################
 
+# Not explicitly loaded with "library()", but required for the spect_train fucntion to run.
+#' @importFrom caret trainControl train
+#' @importFrom caretEnsemble caretList caretStack
+#' @importFrom survival Surv
 
 #' @import futile.logger
 library(futile.logger)
 
 #' @import dplyr
 # Note: This is only required to pass the R CMD check.
-#' @importFrom rlang :=
+#' @importFrom rlang := .data
 library(dplyr)
 
 #' Generates a survival data set for synthetic streaming service subscription data. 
@@ -284,15 +284,16 @@ create_training_data <- function(person_period_data, time_col, event_col, cens) 
         event_interval_indicator = case_when(
           !!sym(time_col) == top_bound & is.na(event_interval_indicator) ~ 0,
           TRUE ~ event_interval_indicator
-        )) %>% filter(!is.na(event_interval_indicator)) %>% arrange(individual_id, interval)
+        )) %>% filter(!is.na(.data$event_interval_indicator
+                             )) %>% arrange(.data$individual_id, .data$interval)
   
   flog.debug("Setting event class as a factor...")
   training_data_candidate$event_class <- make.names(training_data_candidate$event_interval_indicator)
   
   flog.debug("Stripping metadata for modeling...")
   training_data <- training_data_candidate %>% dplyr::select(
-    -c(event_interval_indicator, individual_id, !!sym(time_col), !!sym(event_col), 
-       upper_bound, lower_bound))
+    -c(.data$event_interval_indicator, .data$individual_id, !!sym(time_col), !!sym(event_col), 
+       .data$upper_bound, .data$lower_bound))
   
   return(training_data)
 }
@@ -373,6 +374,13 @@ spect_train <- function(
   data.pp <- create_person_period_data(data.train, bounds)
   data.modeling <- create_training_data(data.pp, survival_time_var, 
                                         event_indicator_var, censor_type)
+  
+  in_test_environment <- Sys.getenv("_R_CHECK_LIMIT_CORES_", "")
+  
+  if (in_test_environment == "TRUE") {
+    # Forcibly turn off parallel processing in CRAN/Travis/AppVeyor testing environe
+    use_parallel <- FALSE
+  }
   
   if(use_parallel){
     
@@ -598,12 +606,12 @@ plot_km <- function(train_result, prediction_threshold_search_granularity = 0.05
     
     flog.debug("Combine predicted and ground truth data sets...")
     threshold_hits_under <- under_threshold %>% 
-      select(predicted_crossing_time = true_interval
+      select(predicted_crossing_time = .data$true_interval
              , !!survival_time_var := {{alt_survival_time_var}}
              , !!event_indicator_var := {{alt_event_indicator_var}})
     
     threshold_hits_over <- over_threshold %>% 
-      select(predicted_crossing_time = interval,
+      select(predicted_crossing_time = .data$interval,
              all_of(event_indicator_var),
              all_of(survival_time_var))
     
@@ -616,13 +624,13 @@ plot_km <- function(train_result, prediction_threshold_search_granularity = 0.05
                                         / (1.0 * train_result$obs_window) )
     
     predicted_elements <- select(threshold_hits, 
-                                 c(predicted_crossing_time,
+                                 c(.data$predicted_crossing_time,
                                    all_of(event_indicator_var)))
     predicted_elements$source <- "Predictions"
     colnames(predicted_elements)[1] ="TimeSlice"
     
     ground_truth_elements <- select(threshold_hits, 
-                                    c(GT_crossing_time, 
+                                    c(.data$GT_crossing_time, 
                                       all_of(event_indicator_var)))
     ground_truth_elements$source <- "Ground Truth"
     colnames(ground_truth_elements)[1] ="TimeSlice"
@@ -743,8 +751,8 @@ evaluate_model <- function(train_result, prediction_times, plot_roc=TRUE){
   # It is required to load the Surv() function separately from the survival package
   # in order to dynamically pass it to the Score function for calling. I'm sure
   # it's not best practice, but it's how this function operates.
-  library(survival, include.only = "Surv")
-  
+  #library(survival, include.only = "Surv")
+
   eval_formula <- stats::as.formula(paste("Surv(", train_result$survival_time_var,",", train_result$event_indicator_var, ") ~ 1"))
   
   # Pass the Score function a list of times and the probability of each individual experiencing 

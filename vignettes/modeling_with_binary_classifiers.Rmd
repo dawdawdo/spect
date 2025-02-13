@@ -48,7 +48,6 @@ Next, save a subset of the data to demonstrate predictions later.
 
 predict_data <- source_data[1:10,]
 train_data <- source_data[11:nrow(source_data),]
-
 ```
 
 Then, call the spect_train() function. Note that the cores parameter is set to 2 specifically to avoid excessive stress on testing systems, however, it's generally best left at zero to allow spect to dynamically choose the number of cores to allocate to the job.
@@ -98,8 +97,6 @@ It is also often useful to see the ROC curve, however, because the modeling data
 
 prediction_times = c(2, 6)
 eval <- evaluate_model(result, prediction_times)
-
-
 ```
 
 Finally - it's relatively easy to calculate quantities of interest such as the unconditional probability of an individual surviving to a particular time. Cumulative probability is already captured by the spect_predict() function in the abs_event_prob column. Note that the conditional probability of surviving an interval, given that the individual survived to the beginning of that interval is also available.
