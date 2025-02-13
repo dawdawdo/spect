@@ -4,7 +4,7 @@
 # relatively simple to implement as a user if absolutely necessary, it is only minimally
 # probed here.
 
-flog.appender(appender.file("unit_tests.log"))
+flog.threshold("ERROR")
 
 test_that("create synthetic data creates a data with the right columns", {
   data <- create_synthetic_data()

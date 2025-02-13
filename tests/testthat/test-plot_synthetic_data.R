@@ -1,4 +1,4 @@
-flog.appender(appender.file("unit_tests.log"))
+flog.threshold("ERROR")
 
 test_that("plot_synthetic_data runs with no errors", {
   
