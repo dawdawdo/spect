@@ -376,21 +376,27 @@ spect_train <- function(
                                         event_indicator_var, censor_type)
   
   in_test_environment <- Sys.getenv("_R_CHECK_LIMIT_CORES_", "")
-  
   if (in_test_environment == "TRUE") {
-    # Forcibly turn off parallel processing in CRAN/Travis/AppVeyor testing environe
+    flog.debug("Testing envrionment detected - forcibly turning off parallel processing...")
     use_parallel <- FALSE
   }
   
   if(use_parallel){
     
     flog.info("Parallel processing specified - creating cluster for Caret modeling...")
+    
     machine_cores <- parallel::detectCores()
-    used_cores <- max(3 * machine_cores / 4, 1)
+    
+    if (cores == 0){
+      used_cores <- max(3 * machine_cores / 4, 1)
+    } else {
+      used_cores <- cores
+    }
     
     flog.debug("Using %i of %i detected cores for parallel processing", used_cores, machine_cores)
     cl <- parallel::makePSOCKcluster(used_cores)
     doParallel::registerDoParallel(cl)
+
   }
   
   flog.info("Creating caret train control...")
