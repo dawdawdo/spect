@@ -50,12 +50,12 @@ predict_data <- source_data[1:10,]
 train_data <- source_data[11:nrow(source_data),]
 ```
 
-Then, call the spect_train() function. Note that the cores parameter is set to 2 specifically to avoid excessive stress on testing systems, however, it's generally best left at zero to allow spect to dynamically choose the number of cores to allocate to the job.
+Then, call the spect_train() function. Note that the cores parameter is not set and use_parallel is set to FALSE, specifically to avoid excessive stress on testing systems, however, it's generally best to choose an appropriate number of cores or left at zero to allow spect to dynamically choose based on system availability.
 
 ```{r}
 result <- spect_train(model_algorithm = "rf"
-                      , base_learner_list = c("gbm", "svmLinear")
-                      , cores = 2
+                      , base_learner_list = c("glm", "svmLinear")
+                      , use_parallel = FALSE
                       , modeling_data = train_data
                       , event_indicator_var = event_column
                       , survival_time_var = time_column
@@ -66,7 +66,7 @@ The result object can be passed to other functions in spect to help visualize an
 
 ```{r}
 
-plot_survival_curve(result, individual_id=15)
+plot_survival_curve(result, individual_id=40)
 
 ```
 
@@ -74,13 +74,13 @@ To see only the conditional probability, set the curve_type to "conditional." Fo
 
 ```{r}
 
-plot_survival_curve(result, individual_id=15, curve_type="conditional")
+plot_survival_curve(result, individual_id=40, curve_type="conditional")
 
 ```
 
 ```{r}
 
-plot_survival_curve(result, individual_id=15, curve_type="absolute")
+plot_survival_curve(result, individual_id=40, curve_type="absolute")
 
 ```
 
@@ -105,8 +105,10 @@ Finally - it's relatively easy to calculate quantities of interest such as the u
 
 predictions  <- spect_predict(result, new_data=predict_data) 
 
-# Collect the absolute probability of surviving to time 6.
+# Collect the absolute probability of individual 1 surviving to time 6.
+individual = 1
 survival_time_check = 6
-tail(predictions[predictions$individual_id == 1 & predictions$upper_bound 
+
+tail(predictions[predictions$individual_id == individual & predictions$upper_bound 
                     < survival_time_check,], n = 1)$abs_event_prob
 ```
